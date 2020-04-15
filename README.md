@@ -28,7 +28,7 @@ ex
 # How it works
 
 It uses a hash table to store the baby steps (the generator table).
-2^30 baby steps is about 9GB (we do not store full point, only a part of it, false collision are resolved later).
+2^30 baby steps is about 9GB (we do not store full point, only a part of it, false collisions are resolved later).
 Here is a brief description of the algoritm:
 
 We have to solve P = k.G, we know that k lies in the range ]k1,k2]
