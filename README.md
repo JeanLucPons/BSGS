@@ -41,7 +41,7 @@ We have to solve P = k.G, we know that k lies in the range ]k1,k2]
  step = 0
  while not found and step<(k1-k2) {
    if S is in the table {
-     k = k1 + m + b
+     k = k1 + step + b
      found = true
    }
    S = S - m.G
