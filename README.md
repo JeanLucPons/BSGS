@@ -41,12 +41,16 @@ We have to solve P = k.G, we know that k lies in the range ]k1,k2], G is the Sec
  step = 0
  while not found and step<(k2-k1) {
    if S is in the table {
-     k = k1 + step + b
+     b = Index of S in  the table
      found = true
    }
-   S = S - m.G
-   step = step + m
+   if not found {
+     S = S - m.G
+     step = step + m
+   }
  }
+ k = k1 + step + b
+
 ```
 
 
