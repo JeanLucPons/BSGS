@@ -39,7 +39,7 @@ We have to solve P = k.G, we know that k lies in the range ]k1,k2], G is the Sec
  S = P - k1.G
  found = false
  step = 0
- while not found and step<(k1-k2) {
+ while not found and step<(k2-k1) {
    if S is in the table {
      k = k1 + step + b
      found = true
