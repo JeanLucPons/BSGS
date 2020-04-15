@@ -1,0 +1,14 @@
+.vs/
+BSGS.vcxproj.user
+BSGS.vcxproj.user
+BSGS.vcxproj.user
+BSGS.VC.opendb
+BSGS.sdf
+vc140.pdb
+x64/
+obj/
+.idea/
+CMakeLists.txt
+BSGS
+cmake-build-debug/
+*.prf
