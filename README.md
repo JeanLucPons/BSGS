@@ -28,20 +28,22 @@ ex
 # How it works
 
 It uses a hash table (24bit hash) to store the baby steps.
-2^30 baby steps is about 9GB (we do not store full point, only a part of it, false collisions are resolved later).
+2^30 baby steps is about 9GB (we do not store full point, only a part of it, false collisions are handled later).
 Here is a brief description of the algoritm:
 
 We have to solve P = k.G, we know that k lies in the range ]k1,k2], G is the SecpK1 generator point.
 
 ```
- m = Baby Step Size # With enough memory, the best choice is m = sqrt(k2-k1) for a single key
- Compute a table of [G,2G,..,b.G,...,m.G]
+ # Baby Step number
+ # With enough memory, the best choice is m = floor(sqrt(k2-k1)) for a single key
+ m = Baby Step number
+ Compute a table of [G,2.G,3.G,..,b.G,...,m.G]
  S = P - k1.G
  found = false
  step = 0
  while not found and step<(k2-k1) {
    if S is in the table {
-     b = Index of S in  the table
+     b = Index of S in the table
      found = true
    }
    if not found {
