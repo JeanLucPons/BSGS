@@ -17,6 +17,7 @@
 
 #include "HashTable.h"
 #include <stdio.h>
+#include <math.h>
 #ifndef WIN64
 #include <string.h>
 #endif

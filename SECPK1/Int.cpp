@@ -19,7 +19,7 @@
 #include "IntGroup.h"
 #include <string.h>
 #include <emmintrin.h>
-#include "..\Timer.h"
+#include "../Timer.h"
 
 #define MAX(x,y) (((x)>(y))?(x):(y))
 #define MIN(x,y) (((x)<(y))?(x):(y))
