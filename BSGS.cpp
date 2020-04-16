@@ -125,9 +125,9 @@ bool BSGS::ParseConfigFile(std::string fileName) {
   }
 
 #ifdef WIN64
-  ::printf("BabyStep:0x%016I64X\n",bsSize);
+  ::printf("BabyStep:0x%016I64X (2^%.2f)\n",bsSize,log2((double)bsSize));
 #else
-  ::printf("BabyStep:0x%" PRIx64 "\n",bsSize);
+  ::printf("BabyStep:0x%" PRIx64 " (2^%.2f)\n",bsSize,log2((double)bsSize));
 #endif
 
   ::printf("Start:%s\n",rangeStart.GetBase16().c_str());

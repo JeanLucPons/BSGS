@@ -32,9 +32,9 @@ using namespace std;
 void printUsage() {
 
   printf("BSGS [-v] [-t nbThread] inFile\n");
-  printf("     \n\n");
   printf(" -v: Print version\n");
   printf(" -t nbThread: Secify number of thread\n");
+  printf(" inFile: intput configuration file\n");
   exit(0);
 
 }
