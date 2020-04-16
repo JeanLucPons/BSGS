@@ -127,7 +127,7 @@ bool BSGS::ParseConfigFile(std::string fileName) {
 #ifdef WIN64
   ::printf("BabyStep:0x%016I64X\n",bsSize);
 #else
-  ::printf("BabyStep:0x" PRIx64 "\n",bsSize);
+  ::printf("BabyStep:0x%" PRIx64 "\n",bsSize);
 #endif
 
   ::printf("Start:%s\n",rangeStart.GetBase16().c_str());
@@ -164,7 +164,7 @@ void  BSGS::JoinThreads(THREAD_HANDLE *handles, int nbThread) {
   for (int i = 0; i < nbThread; i++)
     pthread_join(handles[i], NULL);
 }
-void  BTCCollider::FreeHandles(THREAD_HANDLE *handles, int nbThread) {
+void  BSGS::FreeHandles(THREAD_HANDLE *handles, int nbThread) {
 }
 #endif
 
@@ -204,7 +204,7 @@ void BSGS::FillBabySteps(TH_PARAM *ph) {
 #ifdef WIN64
     ::printf("BabyStep Thread %d: 0x%016I64X -> 0x%016I64X\n",ph->threadId,ph->startKey.bits64[0],ph->startKey.bits64[0]+kPerThread-1);
 #else
-    ::printf("BabyStep:0x" PRIx64 "\n",bsSize);
+    ::printf("BabyStep Thread %d: 0x%" PRIx64 " -> 0x%" PRIx64 "\n",ph->threadId,ph->startKey.bits64[0],ph->startKey.bits64[0]+kPerThread-1);
 #endif
 
   // Baby Step Hashtable contains G,2G,3G,.....,(bsSize).G

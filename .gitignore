@@ -9,6 +9,6 @@ x64/
 obj/
 .idea/
 CMakeLists.txt
-BSGS
+bsgs
 cmake-build-debug/
 *.prf
