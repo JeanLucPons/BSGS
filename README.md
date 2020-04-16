@@ -47,6 +47,7 @@ We have to solve P = k.G, we know that k lies in the range ]k1,k2], G is the Sec
      found = true
    }
    if not found {
+     # Giant step
      S = S - m.G
      step = step + m
    }
