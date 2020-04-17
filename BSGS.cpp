@@ -27,14 +27,6 @@
 #include <pthread.h>
 #endif
 
-#ifdef WIN64
-#define LOCK(mutex) WaitForSingleObject(mutex,INFINITE);
-#define UNLOCK(mutex) ReleaseMutex(mutex);
-#else
-#define LOCK(mutex) pthread_mutex_lock(&(mutex));
-#define UNLOCK(mutex) pthread_mutex_unlock(&(mutex));
-#endif
-
 using namespace std;
 
 // Baby steps
@@ -51,7 +43,7 @@ BSGS::BSGS(Secp256K1 *secp) {
 
   this->secp = secp;
 
-  // Compute Generator table G[n] = (n+1)*G (Baby steps)
+  // Compute Generator table G[n] = (n+1)*G (Baby steps group adding table)
   Point g = secp->G;
   Gn[0] = g;
   g = secp->DoubleDirect(g);
@@ -138,36 +130,6 @@ bool BSGS::ParseConfigFile(std::string fileName) {
 
 }
 
-// ----------------------------------------------------------------------------
-#ifdef WIN64
-
-THREAD_HANDLE BSGS::LaunchThread(LPTHREAD_START_ROUTINE func, TH_PARAM *p) {
-  p->obj = this;
-  return CreateThread(NULL, 0, func, (void*)(p), 0, NULL);
-}
-void  BSGS::JoinThreads(THREAD_HANDLE *handles,int nbThread) {
-  WaitForMultipleObjects(nbThread, handles, TRUE, INFINITE);
-}
-void  BSGS::FreeHandles(THREAD_HANDLE *handles, int nbThread) {
-  for (int i = 0; i < nbThread; i++)
-    CloseHandle(handles[i]);
-}
-#else
-
-THREAD_HANDLE BSGS::LaunchThread(void *(*func) (void *), TH_PARAM *p) {
-  THREAD_HANDLE h;
-  p->obj = this;
-  pthread_create(&h, NULL, func, (void*)(p));
-  return h;
-}
-void  BSGS::JoinThreads(THREAD_HANDLE *handles, int nbThread) {
-  for (int i = 0; i < nbThread; i++)
-    pthread_join(handles[i], NULL);
-}
-void  BSGS::FreeHandles(THREAD_HANDLE *handles, int nbThread) {
-}
-#endif
-
 
 // ----------------------------------------------------------------------------
 
@@ -238,7 +200,7 @@ void BSGS::FillBabySteps(TH_PARAM *ph) {
       // P = startP + i*G
       dy.ModSub(&Gn[i].y,&pp.y);
 
-      _s.ModMulK1(&dy,&dx[i]);       // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
+      _s.ModMulK1(&dy,&dx[i]);        // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
       _p.ModSquareK1(&_s);            // _p = pow2(s)
 
       pp.x.ModNeg();
@@ -395,7 +357,7 @@ void BSGS::SolveKey(TH_PARAM *ph) {
       // P = startP + i*G
       dy.ModSub(&GSn[i].y,&pp.y);
 
-      _s.ModMulK1(&dy,&dx[i]);       // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
+      _s.ModMulK1(&dy,&dx[i]);        // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
       _p.ModSquareK1(&_s);            // _p = pow2(s)
 
       pp.x.ModNeg();
@@ -413,7 +375,7 @@ void BSGS::SolveKey(TH_PARAM *ph) {
       dyn.ModNeg();
       dyn.ModSub(&pn.y);
 
-      _s.ModMulK1(&dyn,&dx[i]);      // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
+      _s.ModMulK1(&dyn,&dx[i]);       // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
       _p.ModSquareK1(&_s);            // _p = pow2(s)
 
       pn.x.ModNeg();
@@ -475,7 +437,7 @@ void BSGS::SolveKey(TH_PARAM *ph) {
     }
     counters[thId] += CPU_GRP_SIZE;
 
-    // Next start point (startP + GRP_SIZE*G)
+    // Next start point (startP += (bsSize*GRP_SIZE).G)
     pp = startP;
     dy.ModSub(&_2GSn.y,&pp.y);
 
@@ -494,6 +456,24 @@ void BSGS::SolveKey(TH_PARAM *ph) {
   }
 
   delete grp;
+  ph->isRunning = false;
+
+}
+
+// ----------------------------------------------------------------------------
+
+void BSGS::SortTable(TH_PARAM *ph) {
+
+  int thId = ph->threadId;
+  counters[thId] = 0;
+  ::printf("Sort Thread %d: %08X -> %08X\n",ph->threadId,ph->sortStart,ph->sortEnd);
+  ph->hasStarted = true;
+
+  for(uint32_t i=ph->sortStart;i<ph->sortEnd;i++) {
+    hashTable.Sort(i);
+    counters[thId]++;  
+  }
+
   ph->isRunning = false;
 
 }
@@ -524,94 +504,14 @@ void *_SolveKey(void *lpParam) {
 
 // ----------------------------------------------------------------------------
 
-bool BSGS::isAlive(TH_PARAM *p) {
-
-  bool isAlive = false;
-  int total = nbCPUThread;
-  for(int i=0;i<total;i++)
-    isAlive = isAlive || p[i].isRunning;
-
-  return isAlive;
-
-}
-
-// ----------------------------------------------------------------------------
-
-bool BSGS::hasStarted(TH_PARAM *p) {
-
-  bool hasStarted = true;
-  int total = nbCPUThread;
-  for (int i = 0; i < total; i++)
-    hasStarted = hasStarted && p[i].hasStarted;
-
-  return hasStarted;
-
-}
-
-// ----------------------------------------------------------------------------
-
-bool BSGS::isWaiting(TH_PARAM *p) {
-
-  bool isWaiting = true;
-  int total = nbCPUThread;
-  for (int i = 0; i < total; i++)
-    isWaiting = isWaiting && p[i].isWaiting;
-
-  return isWaiting;
-
-}
-
-// ----------------------------------------------------------------------------
-
-uint64_t BSGS::getCPUCount() {
-
-  uint64_t count = 0;
-  for(int i=0;i<nbCPUThread;i++)
-    count += counters[i];
-  return count;
-
-}
-
-// ----------------------------------------------------------------------------
-
-string BSGS::GetTimeStr(double dTime) {
-
-  char tmp[256];
-
-  double nbDay = dTime / 86400.0;
-  if (nbDay >= 1) {
-
-    double nbYear = nbDay / 365.0;
-    if (nbYear > 1) {
-      if (nbYear < 5)
-        sprintf(tmp, "%.1fy", nbYear);
-      else
-        sprintf(tmp, "%gy", nbYear);
-    } else {
-      sprintf(tmp, "%.1fd", nbDay);
-    }
-
-  } else {
-
-    int iTime = (int)dTime;
-    int nbHour = (int)((iTime % 86400) / 3600);
-    int nbMin = (int)(((iTime % 86400) % 3600) / 60);
-    int nbSec = (int)(iTime % 60);
-
-    if (nbHour == 0) {
-      if (nbMin == 0) {
-        sprintf(tmp, "%02ds", nbSec);
-      } else {
-        sprintf(tmp, "%02d:%02d", nbMin, nbSec);
-      }
-    } else {
-      sprintf(tmp, "%02d:%02d:%02d", nbHour, nbMin, nbSec);
-    }
-
-  }
-
-  return string(tmp);
-
+#ifdef WIN64
+DWORD WINAPI _SortTable(LPVOID lpParam) {
+#else
+void *_SortTable(void *lpParam) {
+#endif
+  TH_PARAM *p = (TH_PARAM *)lpParam;
+  p->obj->SortTable(p);
+  return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -652,7 +552,28 @@ void BSGS::Run(int nbThread) {
   }
 
   // Wait for end of baby step calculation
-  Process(params);
+  Process(params,"MKey/s");
+  JoinThreads(thHandles,nbCPUThread);
+  FreeHandles(thHandles,nbCPUThread);
+
+
+  // Sort HashTable
+
+  uint32_t t = 0;
+  uint32_t hPerThread = (HASH_SIZE/nbCPUThread);
+
+  // Launch Sort threads
+  for(int i = 0; i < nbCPUThread; i++) {
+    params[i].threadId = i;
+    params[i].isRunning = true;
+    params[i].sortStart = t;
+    params[i].sortEnd = (i==nbCPUThread-1)?HASH_SIZE:t+hPerThread;
+    thHandles[i] = LaunchThread(_SortTable,params + i);
+    t += hPerThread;
+  }
+
+  // Wait for end of table sort
+  Process(params,"MSort/s");
   JoinThreads(thHandles,nbCPUThread);
   FreeHandles(thHandles,nbCPUThread);
 
@@ -691,7 +612,7 @@ void BSGS::Run(int nbThread) {
     g = secp->AddDirect(g,bsP);
     GSn[i] = g;
   }
-  // _2Gn = -CPU_GRP_SIZE*BS
+  // _2GSn = -CPU_GRP_SIZE*BS
   _2GSn = secp->DoubleDirect(GSn[CPU_GRP_SIZE / 2 - 1]);
 
   for(keyIdx =0; keyIdx<keysToSearch.size(); keyIdx++) {
@@ -711,7 +632,7 @@ void BSGS::Run(int nbThread) {
     }
 
     // Wait for end
-    Process(params);
+    Process(params,"MKey/s");
     JoinThreads(thHandles,nbCPUThread);
     FreeHandles(thHandles,nbCPUThread);
 
@@ -723,84 +644,4 @@ void BSGS::Run(int nbThread) {
 
 }
 
-// Wait for end of threads and display stats
-void BSGS::Process(TH_PARAM *params) {
 
-  double t0;
-  double t1;
-
-#ifndef WIN64
-  setvbuf(stdout,NULL,_IONBF,0);
-#endif
-
-  uint64_t lastCount = 0;
-  double avgKeyRate;
-  uint64_t count;
-
-  // Key rate smoothing filter
-#define FILTER_SIZE 8
-  double lastkeyRate[FILTER_SIZE];
-  uint32_t filterPos = 0;
-
-  double keyRate = 0.0;
-
-  memset(lastkeyRate,0,sizeof(lastkeyRate));
-
-  // Wait that all threads have started
-  while(!hasStarted(params))
-    Timer::SleepMillis(50);
-
-  t0 = Timer::get_tick();
-  startTime = t0;
-
-  while(isAlive(params)) {
-
-    int delay = 2000;
-    while(isAlive(params) && delay > 0) {
-      Timer::SleepMillis(50);
-      delay -= 50;
-    }
-
-    count = getCPUCount();
-
-    t1 = Timer::get_tick();
-    keyRate = (double)(count - lastCount) / (t1 - t0);
-    lastkeyRate[filterPos%FILTER_SIZE] = keyRate;
-    filterPos++;
-
-    // KeyRate smoothing
-    avgKeyRate = 0.0;
-    uint32_t nbSample;
-    for(nbSample = 0; (nbSample < FILTER_SIZE) && (nbSample < filterPos); nbSample++) {
-      avgKeyRate += lastkeyRate[nbSample];
-    }
-    avgKeyRate /= (double)(nbSample);
-
-    if(isAlive(params) && !endOfSearch) {
-
-      ::printf("\r[%.2f MKs][Cnt 2^%.2f][%s][%.1fMB]  ",
-        avgKeyRate / 1000000.0,
-        log2((double)count),
-        GetTimeStr(t1 - startTime).c_str(),
-        hashTable.GetSizeMB()
-        );
-
-    }
-
-    lastCount = count;
-    t0 = t1;
-
-  }
-
-  count = hashTable.GetNbItem();
-  
-  if( !endOfSearch ) {
-    ::printf("\r[%.2f MKs][Cnt 2^%.2f][%s][%.1fMB]  \n",
-      avgKeyRate / 1000000.0,
-      log2((double)count),
-      GetTimeStr(t1 - startTime).c_str(),
-      hashTable.GetSizeMB()
-    );
-  }
-
-}

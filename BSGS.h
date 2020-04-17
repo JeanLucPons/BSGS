@@ -30,8 +30,12 @@
 
 #ifdef WIN64
 typedef HANDLE THREAD_HANDLE;
+#define LOCK(mutex) WaitForSingleObject(mutex,INFINITE);
+#define UNLOCK(mutex) ReleaseMutex(mutex);
 #else
 typedef pthread_t THREAD_HANDLE;
+#define LOCK(mutex) pthread_mutex_lock(&(mutex));
+#define UNLOCK(mutex) pthread_mutex_unlock(&(mutex));
 #endif
 
 class BSGS;
@@ -49,6 +53,8 @@ typedef struct {
   bool isWaiting;
   Int  startKey;
   uint64_t nbStep;
+  uint32_t sortStart;
+  uint32_t sortEnd;
 
 } TH_PARAM;
 
@@ -64,6 +70,7 @@ public:
   // Threaded procedures
   void FillBabySteps(TH_PARAM *p);
   void SolveKey(TH_PARAM *p);
+  void SortTable(TH_PARAM *p);
 
 private:
 
@@ -79,7 +86,7 @@ private:
 
   void JoinThreads(THREAD_HANDLE *handles, int nbThread);
   void FreeHandles(THREAD_HANDLE *handles, int nbThread);
-  void Process(TH_PARAM *params);
+  void Process(TH_PARAM *params,std::string unit);
 
   uint64_t getCPUCount();
   bool isAlive(TH_PARAM *p);

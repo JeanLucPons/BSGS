@@ -25,7 +25,7 @@
 #include <Windows.h>
 #endif
 
-#define HASH_SIZE_BIT 24
+#define HASH_SIZE_BIT 25
 #define HASH_SIZE (1<<HASH_SIZE_BIT)
 #define HASH_MASK (HASH_SIZE-1)
 
@@ -49,6 +49,7 @@ public:
   void Reset();
   double GetSizeMB();
   void PrintInfo();
+  void Sort(uint32_t h);
 
 private:
 

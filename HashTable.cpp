@@ -78,14 +78,56 @@ bool HashTable::Get(Int *x,std::vector<uint64_t> &p) {
 
   p.clear();
   uint64_t h = (x->bits64[3] & HASH_MASK);
-  for(int i=0;i<C[h];i++) {
 
-    if((uint32_t)(E[h][i].b0 & B0MASK) == (uint32_t)(x->bits64[0] & B0MASK))
-      p.push_back((uint64_t)E[h][i].p + (((uint64_t)E[h][i].b0 & ~B0MASK)<<32));
+  // Find the leftmost element
+  uint16_t L = 0;
+  uint16_t R = C[h];
+  uint16_t m;
+  uint32_t T = (uint32_t)(x->bits64[0] & B0MASK);
 
+  while (L < R) {
+    m = (L + R) / 2;
+    if ( (E[h][m].b0 & B0MASK) < T ) {
+      L = m + 1;
+    } else {
+      R = m;
+    }
+  }
+
+  if( L<C[h] && (E[h][L].b0 & B0MASK)==T ) {
+    p.push_back((uint64_t)E[h][L].p + (((uint64_t)E[h][L].b0 & ~B0MASK)<<32));
+    L++;
+    while( L<C[h] && ((E[h][L].b0 & B0MASK) == T) ) {
+      p.push_back((uint64_t)E[h][L].p + (((uint64_t)E[h][L].b0 & ~B0MASK)<<32));
+      L++;
+    }
   }
 
   return p.size()>0;
+
+}
+ 
+void HashTable::Sort(uint32_t h) {
+
+  if(C[h]>1) {
+
+    ENTRY *A = E[h];
+    bool endOfSort = false;
+    uint16_t s = C[h]-1;
+    while(!endOfSort) {
+      endOfSort = true;
+      for(uint16_t j=0;j<s;j++) {
+        if( (A[j].b0 & B0MASK) > (A[j+1].b0 & B0MASK) ) {
+          ENTRY T = A[j];
+          A[j] = A[j+1];
+          A[j+1] = T;
+          endOfSort = false;
+        }          
+      }
+      s--;
+    }
+
+  }
 
 }
 
@@ -103,15 +145,21 @@ double HashTable::GetSizeMB() {
 
 void HashTable::PrintInfo() {
 
-  uint16_t m = 0;
-  uint32_t mH = 0;
+  uint16_t max = 0;
+  uint32_t maxH = 0;
+  uint16_t min = 65535;
+  uint32_t minH = 0;
   double std = 0;
   double avg = (double)GetNbItem() / (double)HASH_SIZE;
 
   for(uint32_t h=0;h<HASH_SIZE;h++) {
-    if(C[h]>m) {
-      m=C[h];
-      mH = h;
+    if(C[h]>max) {
+      max=C[h];
+      maxH = h;
+    }
+    if(C[h]<min) {
+      min=C[h];
+      minH = h;
     }
     std += (avg - (double)C[h])*(avg - (double)C[h]);
   }
@@ -120,7 +168,8 @@ void HashTable::PrintInfo() {
 
   ::printf("Size: %f MB\n",GetSizeMB());
   ::printf("Item: 2^%.2f \n",log2((double)GetNbItem()));
-  ::printf("Max : %d [@ %06X]\n",m,mH);
+  ::printf("Max : %d [@ %06X]\n",max,maxH);
+  ::printf("Min : %d [@ %06X]\n",min,minH);
   ::printf("Avg : %.2f \n",avg);
   ::printf("SDev: %.2f \n",std);
 
