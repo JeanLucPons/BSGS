@@ -27,7 +27,7 @@ ex
 
 # How it works
 
-It uses a hash table (24bit hash) to store the baby steps.
+It uses a hash table (25bit hash) to store the baby steps.
 2^30 baby steps is about 9GB (we do not store full point, only a part of it, false collisions are handled later).
 Here is a brief description of the algoritm:
 
