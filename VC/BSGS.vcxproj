@@ -172,15 +172,16 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="..\SECPK1\Int.cpp" />
     <ClCompile Include="..\SECPK1\IntGroup.cpp" />
     <ClCompile Include="..\SECPK1\IntMod.cpp" />
-    <Text Include="in.txt" />
     <Text Include="..\LICENSE.txt" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\SECPK1\Point.cpp" />
     <ClCompile Include="..\SECPK1\Random.cpp" />
     <ClCompile Include="..\SECPK1\SECP256K1.cpp" />
+    <ClCompile Include="..\Thread.cpp" />
     <ClCompile Include="..\Timer.cpp" />
     <ClCompile Include="..\HashTable.cpp" />
     <ClCompile Include="..\BSGS.cpp" />
+    <Text Include="in.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
