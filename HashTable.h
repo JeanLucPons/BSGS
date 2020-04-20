@@ -29,12 +29,12 @@
 #define HASH_SIZE (1<<HASH_SIZE_BIT)
 #define HASH_MASK (HASH_SIZE-1)
 
-#define B0MASK 0xFFFFFF00ULL
+#define B0MASK 0xFFFFFFF0ULL
 
-// 40bit for offset, MAX 2^40 point in HashTable
+// 36bit for offset, MAX 2^36 point in HashTable
 
 typedef struct {
-  uint32_t b0; // LSB key (24 bit) + HSB Offset (8 bit)
+  uint32_t b0; // LSB key (28 bit) + HSB Offset (4 bit)
   uint32_t p;  // LSB Offset
 } ENTRY;
 

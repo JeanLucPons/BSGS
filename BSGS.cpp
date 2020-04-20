@@ -328,7 +328,8 @@ void BSGS::SolveKey(TH_PARAM *ph) {
 
   // Substart ((s*CPU_GRP_SIZE+i)*bsSize).G to the point to solve and look for a match into the hashtable
 
-  for(uint64_t s = 0; s<ph->nbStep && !endOfSearch; s++) {
+  Int s(0ULL);
+  while( s.IsLower(&ph->nbStep) && !endOfSearch ) {
 
     // Fill group
     int i;
@@ -419,7 +420,9 @@ void BSGS::SolveKey(TH_PARAM *ph) {
       if( hashTable.Get(&pts[i].x,off) ) {
         for(int o=0;o<off.size();o++) {
          Int pk(bsSize);
-         Int bigS(s*CPU_GRP_SIZE+i);
+         Int bigS(&s);
+         bigS.Mult((uint64_t)(CPU_GRP_SIZE));
+         bigS.Add(i);
          pk.Mult(&bigS);
          Int bigO(off[o]);
          pk.Add(&bigO);
@@ -453,6 +456,7 @@ void BSGS::SolveKey(TH_PARAM *ph) {
     pp.y.ModSub(&_2GSn.y);
     startP = pp;
 
+    s.AddOne();
   }
 
   delete grp;
@@ -531,6 +535,10 @@ void BSGS::Run(int nbThread) {
   printf("Number of CPU thread: %d\n", nbCPUThread);
 
   // Check input parameters
+  if( bsSize > (1ULL<<36) ) {
+    ::printf("Error, BS size cannot exceed 2^36 !\n");
+    exit(0);
+  }
   uint64_t k = 1;
   kPerThread = bsSize/nbThread;
   if( bsSize%nbThread != 0 ) {
@@ -626,7 +634,7 @@ void BSGS::Run(int nbThread) {
       params[i].threadId = i;
       params[i].isRunning = true;
       params[i].startKey.Set(&sk);
-      params[i].nbStep=stepPerThred.bits64[0];
+      params[i].nbStep.Set(&stepPerThred);
       thHandles[i] = LaunchThread(_SolveKey,params + i);
       sk.Add(&rgPerTh);
     }

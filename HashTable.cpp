@@ -68,7 +68,7 @@ void HashTable::Add(Int *x,uint64_t p) {
     }
   }
 
-  E[h][C[h]].b0 = (uint32_t)(x->bits64[0] & B0MASK) | (uint32_t)((p & 0xFF00000000ULL) >> 32);
+  E[h][C[h]].b0 = (uint32_t)(x->bits64[0] & B0MASK) | (uint32_t)((p & 0xF00000000ULL) >> 32);
   E[h][C[h]].p  = (uint32_t)(p & 0xFFFFFFFFULL);
   C[h]++;
 

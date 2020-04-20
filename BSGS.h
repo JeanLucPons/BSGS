@@ -52,7 +52,7 @@ typedef struct {
   bool hasStarted;
   bool isWaiting;
   Int  startKey;
-  uint64_t nbStep;
+  Int  nbStep;
   uint32_t sortStart;
   uint32_t sortEnd;
 
