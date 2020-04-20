@@ -328,7 +328,7 @@ void BSGS::SolveKey(TH_PARAM *ph) {
 
   // Substart ((s*CPU_GRP_SIZE+i)*bsSize).G to the point to solve and look for a match into the hashtable
 
-  Int s(0ULL);
+  Int s((uint64_t)0);
   while( s.IsLower(&ph->nbStep) && !endOfSearch ) {
 
     // Fill group

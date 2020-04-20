@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdexcept>
 
-#define RELEASE "1.0"
+#define RELEASE "1.1"
 
 using namespace std;
 
